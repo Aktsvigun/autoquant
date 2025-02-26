@@ -1,5 +1,20 @@
 ## Auto quantization for TeamCity integration
 
+### Script Arguments
+
+- **`--config-path`**: Path to the configuration file. Default is `config.json`.
+- **`--model-id`**: Model ID on HuggingFace (e.g., `Qwen/Qwen2.5-VL-7B-Instruct`).
+- **`--model-type`**: Class from HuggingFace's `transformers` library used to load the model. Found in the model's card under "Use with transformers" (e.g., `Qwen2_5_VLForConditionalGeneration`).
+- **`--task`**: Task for which the model is used. Supported values: `"text-to-text"`, `"image-to-text"`.
+- **`--ports`**: Comma-separated ports for serving the original and quantized models (e.g., `8001,8002`).
+- **`--num-gpus-first-model`**: Number of GPUs for the original model. Use `-1` for automatic GPU allocation.
+- **`--num-concurrent`**: Number of concurrent requests to send to each server.
+- **`--max-tokens`**: Maximum number of tokens to generate for all tasks.
+- **`--do-quantize`**: Flag to enable quantization and model saving.
+- **`--ignore-modules`**: List of modules to ignore during quantization (e.g., `["lm_head"]` or `["re:.*lm_head", "re:visual.*"]`). Refer to [llm-compressor](https://github.com/vllm-project/llm-compressor/tree/main/examples) examples or consult @aktsvigun for guidance.
+
+These arguments can be specified either in the `config.json` file or passed via the command line using `ArgParser`. Command-line arguments take precedence over those in the configuration file.
+
 ### Create the Docker image: 
 ```bash
 docker build -t quant-eval .
