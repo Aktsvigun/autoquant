@@ -1,0 +1,11 @@
+{
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_type": "AutoModelForCausalLM",
+  "task": "text-to-text",
+  "ports": "8007,8008",
+  "num_gpus_first_model": 1,
+  "num_concurrent": 16,
+  "max_tokens": 2048,
+  "do_quantize": true,
+  "ignore_modules": ["lm_head"]
+}
