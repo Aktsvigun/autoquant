@@ -487,6 +487,10 @@ def quantize_and_save(config: dict[str, str | int]):
     #   * quantize the weights to fp8 with per channel via ptq
     #   * quantize the activations to fp8 with dynamic per token
     ignore_modules = config["ignore_modules"]
+    if not ignore_modules and task == "text-to-text":
+        ignore_modules = ["lm_head"]
+    elif not ignore_modules and task == "image-to-text":
+        ignore_modules = ["lm_head", "re:visual.*"]
     recipe = QuantizationModifier(
         targets="Linear", scheme="FP8_DYNAMIC", ignore=ignore_modules
     )
