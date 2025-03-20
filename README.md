@@ -25,6 +25,78 @@ docker build -t quant-eval .
 docker run -it --gpus all -v ./model-storage:/app/model-storage   -v ./eval-generations:/app/eval-generations -v ./cache:/app/cache   -e NEBIUS_API_KEY=$NEBIUS_API_KEY    -e HF_TOKEN=$HF_TOKEN   -p 8007-8008:8007-8008   quant-eval
 ```
 
+### Example Commands
+
+#### Text-to-Text Model
+You can run a text-to-text model evaluation using either command-line arguments or a config file:
+
+Using command-line arguments:
+```bash
+python main.py --model-id "Qwen/Qwen2.5-7B-Instruct" \
+               --model-type "AutoModelForCausalLM" \
+               --task "text-to-text" \
+               --ports "8007,8008" \
+               --num-gpus-first-model 1 \
+               --num-concurrent 16 \
+               --max-tokens 2048 \
+               --do-quantize \
+               --ignore-modules '["lm_head"]'
+```
+
+Using a config file:
+```bash
+# Example config.json for text-to-text model
+{
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "model_type": "AutoModelForCausalLM",
+  "task": "text-to-text",
+  "ports": "8007,8008",
+  "num_gpus_first_model": 1,
+  "num_concurrent": 16,
+  "max_tokens": 2048,
+  "do_quantize": true,
+  "ignore_modules": ["lm_head"]
+}
+
+# Run with config file
+python main.py --config-path "config.json"
+```
+
+#### Image-to-Text Model
+For image-to-text models, you need to use a vision-language model:
+
+Using command-line arguments:
+```bash
+python main.py --model-id "Qwen/Qwen2.5-VL-72B-Instruct" \
+               --model-type "Qwen2_5_VLForConditionalGeneration" \
+               --task "image-to-text" \
+               --ports "8007,8008" \
+               --num-gpus-first-model 4 \
+               --num-concurrent 16 \
+               --max-tokens 2048 \
+               --do-quantize \
+               --ignore-modules '["lm_head", "re:visual.*"]'
+```
+
+Using a config file:
+```bash
+# Example config.json for image-to-text model
+{
+  "model_id": "Qwen/Qwen2.5-VL-72B-Instruct",
+  "model_type": "Qwen2_5_VLForConditionalGeneration",
+  "task": "image-to-text",
+  "ports": "8007,8008",
+  "num_gpus_first_model": 4,
+  "num_concurrent": 16,
+  "max_tokens": 2048,
+  "do_quantize": true,
+  "ignore_modules": ["lm_head", "re:visual.*"]
+}
+
+# Run with config file
+python main.py --config-path "config.json"
+```
+
 ### Output example
 The script will output whether the quantized model has a statistically significant quality drop compared to that of the original model.
 
