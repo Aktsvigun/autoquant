@@ -167,6 +167,9 @@ def _assign_gpus(num_gpus_first_model):
 
     first_model_gpus = CUDA_DEVICES[:num_gpus_first_model]
     second_model_gpus = CUDA_DEVICES[num_gpus_first_model:]
+    # Qwen models require the number of GPUs to be a multiple of 4
+    while (not len(second_model_gpus) % 4 == 0) and (len(second_model_gpus) > 1):
+        second_model_gpus = second_model_gpus[:-1]
     return first_model_gpus, second_model_gpus
 
 
