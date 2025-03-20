@@ -32,7 +32,7 @@ You can run a text-to-text model evaluation using either command-line arguments 
 
 Using command-line arguments:
 ```bash
-python main.py --model-id "Qwen/Qwen2.5-7B-Instruct" \
+python quantize_and_eval.py --model-id "Qwen/Qwen2.5-7B-Instruct" \
                --model-type "AutoModelForCausalLM" \
                --task "text-to-text" \
                --ports "8007,8008" \
@@ -59,7 +59,7 @@ Using a config file:
 }
 
 # Run with config file
-python main.py --config-path "config.json"
+python quantize_and_eval.py --config-path "config.json"
 ```
 
 #### Image-to-Text Model
@@ -67,7 +67,7 @@ For image-to-text models, you need to use a vision-language model:
 
 Using command-line arguments:
 ```bash
-python main.py --model-id "Qwen/Qwen2.5-VL-72B-Instruct" \
+python quantize_and_eval.py --model-id "Qwen/Qwen2.5-VL-72B-Instruct" \
                --model-type "Qwen2_5_VLForConditionalGeneration" \
                --task "image-to-text" \
                --ports "8007,8008" \
@@ -94,7 +94,7 @@ Using a config file:
 }
 
 # Run with config file
-python main.py --config-path "config.json"
+python quantize_and_eval.py --config-path "config.json"
 ```
 
 ### Output example
