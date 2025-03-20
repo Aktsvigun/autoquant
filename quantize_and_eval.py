@@ -48,7 +48,7 @@ SERVER_MAX_TIMEOUT = 1800
 CONFIDENCE_LEVEL = 0.05
 MODEL_SAVE_DIR = os.getenv("MODEL_SAVE_DIR", "/home/aktsvigun/model-storage")
 RESULTS_SAVE_DIR = os.getenv("RESULTS_SAVE_DIR", "./eval_generations")
-CUDA_DEVICES = os.getenv("CUDA_VISIBLE_DEVICES", "0").split(",")
+CUDA_DEVICES = os.getenv("CUDA_VISIBLE_DEVICES", ",".join([str(i) for i in range(cuda.device_count())])).split(",")
 DO_QUANTIZE = os.getenv("DO_QUANTIZE", "True").lower() in ("true", "1", "t", "yes")
 
 SERVER_TASK_SPECIFIC_ARGS = {
@@ -274,7 +274,7 @@ def run_single_evaluation(
     for dataset_name in datasets:
         # Map dataset name if its shortened version is used
         dataset_name = DATASET_MAP.get(dataset_name, dataset_name)
-        dataset = load_dataset(dataset_name)
+        dataset = load_dataset(dataset_name, cache_dir=CACHE_DIR)
         if "train" in dataset.keys():
             dataset = dataset["train"]
         else:
