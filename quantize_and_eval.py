@@ -44,15 +44,18 @@ MAX_TOKENS = os.getenv("MAX_TOKENS", 2048)
 EVAL_DATASETS = os.getenv("EVAL_DATASETS", "gpqa,mmlu_pro")
 MODEL_PATH = os.getenv("model_path", None)
 SERVER_PORTS = os.getenv("SERVER_PORTS", "8000,8001")
-SERVER_MAX_TIMEOUT = 900
+SERVER_MAX_TIMEOUT = 1800
 CONFIDENCE_LEVEL = 0.05
 MODEL_SAVE_DIR = os.getenv("MODEL_SAVE_DIR", "/home/aktsvigun/model-storage")
 RESULTS_SAVE_DIR = os.getenv("RESULTS_SAVE_DIR", "./eval_generations")
 CUDA_DEVICES = os.getenv("CUDA_VISIBLE_DEVICES", "0").split(",")
+DO_QUANTIZE = os.getenv("DO_QUANTIZE", "True").lower() in ("true", "1", "t", "yes")
 
 SERVER_TASK_SPECIFIC_ARGS = {
     "text-to-text": [],
-    "image-to-text": ["--limit-mm-per-prompt", "image=8"],
+    "image-to-text": [
+        "--limit-mm-per-prompt", "image=8",
+    ],
 }
 DATASET_MAP = {
     "gpqa": "Aktsvigun/nebius_eval_gpqa_diamond",
@@ -458,8 +461,8 @@ def quantize_and_save(config: dict[str, str | int]):
     # Load model
     model_class = get_model_type(model_type)
     model = model_class.from_pretrained(
-        model_id, device_map=None, torch_dtype="auto", cache_dir=CACHE_DIR
-    ).cuda()
+        model_id, device_map="auto", torch_dtype="auto", cache_dir=CACHE_DIR
+    )
     if task == "text-to-text":
         tokenizer_or_processor = AutoTokenizer.from_pretrained(
             model_id, cache_dir=CACHE_DIR
@@ -471,8 +474,10 @@ def quantize_and_save(config: dict[str, str | int]):
     else:
         raise ValueError("Unknown task: " + task)
     if not os.path.exists(save_dir):
+        logger.info("Saving the original model...")
         model.save_pretrained(save_dir)
         tokenizer_or_processor.save_pretrained(save_dir)
+        logger.info("Successfully saved the original model. Starting quantization...")
 
     # Configure the quantization algorithm and scheme.
     # In this case, we:
@@ -486,7 +491,7 @@ def quantize_and_save(config: dict[str, str | int]):
     # Apply quantization.
     oneshot(model=model, recipe=recipe)
 
-    logger.info("Saving the model...")
+    logger.info("Saving the quantized model...")
     # Save to disk in compressed-tensors format.
     model.save_pretrained(save_dir_fp8)
     tokenizer_or_processor.save_pretrained(save_dir_fp8)
@@ -508,7 +513,7 @@ def main(config: dict[str, Any]):
         )
 
     # Quantize and save the model
-    if config.get("do_quantize", True):
+    if config.get("do_quantize", DO_QUANTIZE):
         quantize_and_save(config)
 
     model_path = os.path.join(MODEL_SAVE_DIR, config["model_id"])
@@ -536,6 +541,10 @@ def main(config: dict[str, Any]):
         "-tp",
         str(len(first_model_gpus)),
         "--disable-log-requests",
+        "--max-model-len",
+        "32000",
+        "--gpu-memory-utilization",
+        "0.9",
     ] + server_task_specific_args
 
     server1 = subprocess.Popen(
@@ -543,6 +552,11 @@ def main(config: dict[str, Any]):
         stdout=sys.stderr,
         stderr=sys.stderr,
     )
+    
+    # Give the server some time to initialize before checking health
+    logger.info("Waiting 30 seconds for server with the original model to initialize...")
+    sleep(30)
+    
     # Second server (launches if sufficient number of GPUs is available)
     server2 = None
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(second_model_gpus)
@@ -561,6 +575,10 @@ def main(config: dict[str, Any]):
             "-tp",
             str(len(second_model_gpus)),
             "--disable-log-requests",
+            "--max-model-len",
+            "32000",
+            "--gpu-memory-utilization",
+            "0.9",
         ] + server_task_specific_args
 
         server2 = subprocess.Popen(
@@ -568,6 +586,10 @@ def main(config: dict[str, Any]):
             stdout=sys.stderr,
             stderr=sys.stderr,
         )
+        
+        # Give the server some time to initialize before checking health
+        logger.info("Waiting 30 seconds for server with the quantized model to initialize...")
+        sleep(30)
 
     # Ensure clean shutdown
     atexit.register(lambda: [p.terminate() for p in [server1, server2] if p])
@@ -644,9 +666,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--do-quantize",
-        action="store_true",
+        type=lambda x: str(x).lower() in ("true", "1", "t", "yes"),
         default=None,
-        help="Whether to run quantization & model saving",
+        help="Whether to run quantization & model saving. Can be set using DO_QUANTIZE environment variable.",
     )
     parser.add_argument(
         "--ignore-modules",

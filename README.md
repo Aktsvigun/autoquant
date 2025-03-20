@@ -22,7 +22,7 @@ docker build -t quant-eval .
 
 ### Launch the container (example):
 ```bash
-docker run -it --gpus 2   -v ./model-storage:/app/model-storage   -v ./eval-generations:/app/eval-generations   -e NEBIUS_API_KEY=$NEBIUS_API_KEY    -e HF_TOKEN=$HF_TOKEN   -p 8007-8008:8007-8008   quant-eval
+docker run -it --gpus all -v ./model-storage:/app/model-storage   -v ./eval-generations:/app/eval-generations -v ./cache:/app/cache   -e NEBIUS_API_KEY=$NEBIUS_API_KEY    -e HF_TOKEN=$HF_TOKEN   -p 8007-8008:8007-8008   quant-eval
 ```
 
 ### Output example

@@ -15,6 +15,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN mkdir -p ${MODEL_SAVE_DIR} ${RESULTS_SAVE_DIR} ${CACHE_DIR}
 
+# Define volumes that can be mounted from host
+VOLUME ["/app/cache"]
+
 EXPOSE 8007-8008
 
 ENTRYPOINT ["python3", "quantize_and_eval.py", "--config-path", "/app/config.json"]
